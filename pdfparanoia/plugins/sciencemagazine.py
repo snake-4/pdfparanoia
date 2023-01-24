@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from copy import copy
-import sys
-
 from ..parser import parse_content
 from ..eraser import remove_object_by_id
 from ..plugin import Plugin
+from pdfminer.pdftypes import PDFObjectNotFound
 
 class ScienceMagazine(Plugin):
     """
@@ -32,8 +30,11 @@ class ScienceMagazine(Plugin):
 
         # check each object in the pdf
         for objid in objids:
-            # get an object by id
-            obj = pdf.getobj(objid)
+            obj = None
+            try:
+                obj = pdf.getobj(objid)
+            except PDFObjectNotFound:
+                continue
 
             if hasattr(obj, "attrs"):
                 if ("Width" in obj.attrs) and str(obj.attrs["Width"]) == "432":

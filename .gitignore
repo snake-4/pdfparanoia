@@ -2,6 +2,7 @@
 .*.sw*
 .*~
 *~
+.vscode
 
 # ignore precompiled python files
 *.pyc
@@ -10,6 +11,9 @@
 build/
 dist/
 pdfparanoia.egg-info/
+
+# virtualenv
+venv
 
 # ignore pdfs in the top-level dir
 /*.pdf

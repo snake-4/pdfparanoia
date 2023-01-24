@@ -23,7 +23,4 @@ __author__ = "Bryan Bishop <kanzure@gmail.com>"
 __license__ = "BSD"
 __copyright__ = "Copyright 2013 Bryan Bishop"
 
-from . import utils
 from .core import scrub
-from .parser import deflate
-

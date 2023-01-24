@@ -1,1 +1,1 @@
-pdfminer>=20131113
+pdfminer.six==20221105

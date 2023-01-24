@@ -10,11 +10,11 @@ class RoyalSocietyOfChemistryTestCase(unittest.TestCase):
         file_handler.close()
 
         # Check the PDF is from the RSC
-        self.assertIn("pubs.rsc.org", content)
+        self.assertIn(b"pubs.rsc.org", content)
 
         output = pdfparanoia.plugins.RoyalSocietyOfChemistry.scrub(content)
 
         # Check the PDF was output correctly and still 
         # contains the RSC url. 
-        self.assertIn("pubs.rsc.org", output)
+        self.assertIn(b"pubs.rsc.org", output)
 

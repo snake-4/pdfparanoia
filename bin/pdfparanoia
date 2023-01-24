@@ -7,36 +7,23 @@ This is the command-line client. It accepts pdf formatted data either through
 stdin/piping or by referencing a file in argv[0].
 """
 
-
 if __name__ == "__main__":
     import sys
     import pdfparanoia
     import argparse
 
-    try:
-        from StringIO import StringIO
-    except ImportError:
-        from io import StringIO, BytesIO
-
-    ArgP = argparse.ArgumentParser(description="pdfparanoia is a PDF watermark removal library for academic papers. Some publishers include private information like institution names, personal names, ip addresses, timestamps and other identifying information in watermarks on each page.")
-    ArgP.add_argument('in_pdf', nargs='?', type=argparse.FileType('rb'),
-                        default='-') # argparse.FileType interprets "-" as Stdin.
-    ArgP.add_argument("-o", "--output", type=argparse.FileType('wb'),
-                        default=sys.stdout)
-    ArgP.add_argument("-v", "--verbose", action="store_true", default=False,
+    parser = argparse.ArgumentParser(description="pdfparanoia is a PDF watermark removal library for academic papers. Some publishers include private information like institution names, personal names, ip addresses, timestamps and other identifying information in watermarks on each page.")
+    parser.add_argument('input', nargs=1)
+    parser.add_argument("-o", "--output", default=sys.stdout)
+    parser.add_argument("-v", "--verbose", action="store_true", default=False,
                       help="Output more information, which may be sensitive or excessive.")
-    ArgP.add_argument("-V", "--more-verbose", action="store_true", default=False,
-                      help="Output even more information. Implies -v.")
-    Args = ArgP.parse_args()
+    args = parser.parse_args()
+    verbose = 1 if args.verbose else 0
+    
+    inputContent = None
+    with open(args.input[0], 'rb') as input_file:
+        inputContent = input_file.read()
 
-    verbose = 0
-    if Args.verbose: verbose = 1
-    if Args.more_verbose: verbose = 2
-
-    # I really don't like having to read a file only to cast as StringIO, but seems
-    # necessary to get reading from StdIn to play nicely with pdfparanoia.
-    outputcontent = pdfparanoia.scrub(StringIO(Args.in_pdf.read()), verbose=verbose)
-    Args.in_pdf.close()
-    Args.output.write(outputcontent)
-    if Args.output != sys.stdout:
-        Args.output.close()
+    outputContent = pdfparanoia.scrub(inputContent, verbose=verbose)
+    with open(args.output, 'wb') as output_file:
+        output_file.write(outputContent)

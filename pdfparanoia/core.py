@@ -10,13 +10,7 @@ This module provides most of the heavy lifting of pdfparanoia.
 import sys
 import inspect
 
-from .parser import (
-    parse_pdf,
-    parse_content,
-)
-
 from .plugin import Plugin
-
 from pdfparanoia.plugins import *
 
 def find_plugins():
@@ -32,19 +26,10 @@ def find_plugins():
     plugins = [each[1] for each in plugins]
     return plugins
 
-def scrub(obj, verbose=False):
+def scrub(content, verbose=False):
     """
     Removes watermarks from a pdf and returns the resulting pdf as a string.
     """
-    # reset the file handler
-    if hasattr(obj, "seek"):
-        obj.seek(0)
-    else:
-        obj = open(obj, "rb")
-
-    # load up the raw bytes
-    content = obj.read()
-
     # get a list of plugins that will manipulate this paper
     plugins = find_plugins()
 

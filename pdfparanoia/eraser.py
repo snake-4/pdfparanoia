@@ -14,28 +14,27 @@ def manipulate_pdf(content, objid, callback, *args):
     output lines.
     """
     outlines = []
-    content = content.replace("\r\n", "\n")
-    lines = content.split("\n")
+    lines = content.splitlines(keepends=True) # change this
     last_line = None
     skip_mode = False
     for line in lines:
-        if line == "":
-            outlines.append("")
+        cleanLine = line.replace(b"\n", b"").replace(b"\r", b"").decode('ascii', 'ignore')
+        if cleanLine == '':
+            outlines.append(line)
             continue
         if not skip_mode:
             if last_line in ["endobj", "endobj ", None]:
-                if line[-3:] == "obj" or line[-4:] == "obj " or " obj <<" in line[0:50] or " obj<<" in line[0:50]:
-                    if line.startswith(str(objid) + " "):
-                        skip_mode = True
-                        last_line = line
-                        callback(outlines, *args)
-                        continue
+                isStartOfObject = (cleanLine[-3:] == "obj" or cleanLine[-4:] == "obj " or " obj <<" in cleanLine[0:50] or " obj<<" in cleanLine[0:50])
+                if isStartOfObject and cleanLine.startswith(f"{objid} "):
+                    skip_mode = True
+                    last_line = cleanLine
+                    callback(outlines, *args)
+                    continue
             outlines.append(line)
-        elif skip_mode:
-            if line == "endobj" or line == "endobj ":
-                skip_mode = False
-        last_line = line
-    output = "\n".join(outlines)
+        elif skip_mode and cleanLine == "endobj" or cleanLine == "endobj ":
+            skip_mode = False
+        last_line = cleanLine
+    output = b''.join(outlines)
     return output
 
 def remove_object_by_id(content, objid):
@@ -55,13 +54,10 @@ def replace_object_with(content, objid, replacement):
         objid = details["objid"]
         replacement = details["replacement"]
 
-        output = str(objid) + " 0 obj\n"
-        output += "<</Length " + str(len(replacement)+2) + ">>stream\n"
-        output += replacement
-        output += "\nendstream\nendobj\n"
-
-        for line in output.split("\n"):
-            outlines.append(line)
+        output = bytearray(f"{objid} 0 obj\n<</Length {len(replacement)+2}>>stream\n".encode('ascii', 'ignore'))
+        output.extend(replacement)
+        output.extend(b"\nendstream\nendobj\n")
+        outlines.append(bytes(output))
 
     output = manipulate_pdf(content, objid, _replace_object_with, {"objid": objid, "replacement": replacement})
     return output
