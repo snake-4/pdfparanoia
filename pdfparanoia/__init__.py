@@ -16,11 +16,5 @@ usage:
 :license: BSD.
 """
 
-__title__ = "pdfparanoia"
-__version__ = "0.0.17"
-__build__ = 0x000017
-__author__ = "Bryan Bishop <kanzure@gmail.com>"
-__license__ = "BSD"
-__copyright__ = "Copyright 2013 Bryan Bishop"
-
+import plugins
 from .core import scrub
