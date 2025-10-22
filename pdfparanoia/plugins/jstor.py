@@ -8,7 +8,7 @@ from ..eraser import (
 )
 from ..plugin import Plugin
 
-from pdfminer.pdftypes import PDFObjectNotFound
+from pdfminer.pdftypes import PDFObjectNotFound, PDFStream
 
 class JSTOR(Plugin):
     """
@@ -28,9 +28,9 @@ class JSTOR(Plugin):
 
     # these terms appear on a page that has been watermarked
     requirements = [
-        "All use subject to ",
-        "JSTOR Terms and Conditions",
-        "This content downloaded  on",
+        b"All use subject to ",
+        b"JSTOR Terms and Conditions",
+        b"This content downloaded  on",
     ]
 
     @staticmethod
@@ -51,10 +51,10 @@ class JSTOR(Plugin):
         for objid in objids:
             # get an object by id
             try:
-                obj = pdf.getobj(objid)
+                obj: PDFStream = pdf.getobj(objid) # pyright: ignore[reportAssignmentType]
 
                 if hasattr(obj, "attrs"):
-                    if "Filter" in obj.attrs and str(obj.attrs["Filter"]) == "/FlateDecode":
+                    if "Filter" in obj.attrs and "FlateDecode" in str(obj.attrs["Filter"]):
                         data = copy(obj.get_data())
 
                         # make sure all of the requirements are in there
@@ -62,13 +62,13 @@ class JSTOR(Plugin):
                             better_content = data
 
                             # remove the date
-                            startpos = better_content.find("This content downloaded ")
-                            endpos = better_content.find(")", startpos)
+                            startpos = better_content.find(b"This content downloaded ")
+                            endpos = better_content.find(b")", startpos)
                             segment = better_content[startpos:endpos]
                             if verbose and replacements:
                                 print(f"JSTOR: Found object {objid} with {JSTOR.requirements}: {segment}; omitting...")
 
-                            better_content = better_content.replace(segment, "")
+                            better_content = better_content.replace(segment, b"")
 
                             # it looks like all of the watermarks are at the end?
                             better_content = better_content[:-160]
@@ -81,9 +81,9 @@ class JSTOR(Plugin):
                             #
                             # This would be better if it could be decoded to
                             # actually search for the "Accessed" text.
-                            if page_id == 0 and "/F2 11 Tf\n" in better_content:
-                                startpos = better_content.rfind("/F2 11 Tf\n")
-                                endpos = better_content.find("Tf\n", startpos+5)
+                            if page_id == 0 and b"/F2 11 Tf\n" in better_content:
+                                startpos = better_content.rfind(b"/F2 11 Tf\n")
+                                endpos = better_content.find(b"Tf\n", startpos+5)
 
                                 if verbose and replacements:
                                     print(f"JSTOR: Found object {objid} with {JSTOR.requirements}: {better_content[startpos:endpos]}; omitting...")
