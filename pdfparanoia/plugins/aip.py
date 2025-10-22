@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-
-from copy import copy
-from ..parser import parse_content
+from ..parser import iterate_objects
 from ..eraser import remove_object_by_id
 from ..plugin import Plugin
-from pdfminer.pdftypes import PDFObjectNotFound
+from pdfminer.pdftypes import PDFStream
+
 
 class AmericanInstituteOfPhysics(Plugin):
     """
@@ -17,43 +15,23 @@ class AmericanInstituteOfPhysics(Plugin):
 
     @staticmethod
     def scrub(content: bytes, verbose: bool = False) -> bytes:
-        evil_ids = []
-
-        # parse the pdf into a pdfminer document
-        pdf = parse_content(content)
-
-        # get a list of all object ids
-        xref = pdf.xrefs[0]
-        objids = xref.get_objids()
-
-        # check each object in the pdf
-        for objid in objids:
-            # get an object by id
-            obj = None
-            try:
-                obj = pdf.getobj(objid)
-            except PDFObjectNotFound:
-                continue
-
-            if hasattr(obj, "attrs"):
+        for objid, obj in iterate_objects(content):
+            if isinstance(obj, PDFStream):
                 # watermarks tend to be in FlateDecode elements
-                if "Filter" in obj.attrs and "FlateDecode" in str(obj.attrs["Filter"]):
+                if "FlateDecode" in str(obj.attrs.get("Filter", "")):
                     length = obj.attrs["Length"]
 
                     # the watermark is never very long
                     if length < 1000:
-                        #rawdata = copy(obj.rawdata)
-                        data = copy(obj.get_data()).decode('ascii', 'ignore')
-
-                        phrase="Redistribution subject to AIP license or copyright"
-                        if phrase in data:
+                        if (
+                            b"Redistribution subject to AIP license or copyright"
+                            in obj.get_data()
+                        ):
                             if verbose:
-                                print(f"AmericanInstituteOfPhysics: Found object {objid} with \"{phrase}\"; omitting...")
+                                print(
+                                    f"AmericanInstituteOfPhysics: Found object {objid}; omitting..."
+                                )
 
-                            evil_ids.append(objid)
-
-        for objid in evil_ids:
-            content = remove_object_by_id(content, objid)
+                            content = remove_object_by_id(content, objid)
 
         return content
-

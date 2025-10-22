@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-
-from copy import copy
-from ..parser import parse_content
+from pdfparanoia.eraser import remove_object_by_id
+from ..parser import iterate_objects
 from ..plugin import Plugin
-from pdfminer.pdftypes import PDFObjectNotFound
+from pdfminer.pdftypes import PDFStream
 
 
 class RoyalSocietyOfChemistry(Plugin):
@@ -21,59 +19,32 @@ class RoyalSocietyOfChemistry(Plugin):
     This was primary written for RSC PDF's from http://pubs.rsc.org
     """
 
+    WATERMARKS = [
+        b"Downloaded by ",
+        b"Downloaded on ",
+        b"Published on ",
+        # b"View Article Online",
+        # b"Journal Homepage",
+        # b"Table of Contents for this issue",
+    ]
+
     @staticmethod
     def scrub(content: bytes, verbose: bool = False) -> bytes:
-        replacements = []
+        if b"pubs.rsc.org" not in content:
+            return content
 
-        # List of watermark strings to remove
-        watermarks = [
-            "Downloaded by ",
-            "Downloaded on ",
-            "Published on ",
-            # "View Article Online",
-            # "Journal Homepage",
-            # "Table of Contents for this issue",
-        ]
+        for objid, obj in iterate_objects(content):
+            if isinstance(obj, PDFStream):
+                # watermarks tend to be in FlateDecode elements
+                if "FlateDecode" in str(obj.attrs.get("Filter", "")):
+                    data = obj.get_data()
 
-        # Confirm the PDF is from the RSC
-        if b"pubs.rsc.org" in content:
-
-            # parse the pdf into a pdfminer document
-            pdf = parse_content(content)
-
-            # get a list of all object ids
-            xref = pdf.xrefs[0]
-            objids = xref.get_objids()
-
-            # check each object in the pdf
-            for objid in objids:
-                obj = None
-                try:
-                    obj = pdf.getobj(objid)
-                except PDFObjectNotFound:
-                    continue
-
-                if hasattr(obj, "attrs"):
-                    # watermarks tend to be in FlateDecode elements
-                    if "Filter" in obj.attrs and "FlateDecode" in str(
-                        obj.attrs["Filter"]
-                    ):
-                        rawdata = copy(obj.rawdata)
-                        data = copy(obj.get_data()).decode("ascii", "ignore")
-
-                        # Check if any of the watermarks are in the current object
-                        for phrase in watermarks:
-                            if phrase in data:
-                                if verbose:
-                                    print(
-                                        f'RoyalSocietyOfChemistry: Found object {objid} with "{phrase}"; omitting...'
-                                    )
-
-                                # We had a match so replace the watermark data with an empty string
-                                replacements.append([rawdata, b""])
-
-        for deets in replacements:
-            # Directly replace the stream data in binary encoded object
-            content = content.replace(deets[0], deets[1])
+                    for phrase in RoyalSocietyOfChemistry.WATERMARKS:
+                        if phrase in data:
+                            if verbose:
+                                print(
+                                    f'RoyalSocietyOfChemistry: Found object {objid} with "{phrase}"; omitting...'
+                                )
+                            content = remove_object_by_id(content, objid)
 
         return content

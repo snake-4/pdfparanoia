@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
-
-from copy import copy
-
-from ..parser import parse_content
+from ..parser import iterate_objects
 from ..eraser import (
     replace_object_with,
 )
 from ..plugin import Plugin
 
-from pdfminer.pdftypes import PDFObjectNotFound, PDFStream
+from pdfminer.pdftypes import PDFStream
+
 
 class JSTOR(Plugin):
     """
@@ -27,7 +24,7 @@ class JSTOR(Plugin):
     """
 
     # these terms appear on a page that has been watermarked
-    requirements = [
+    WATERMARKS = [
         b"All use subject to ",
         b"JSTOR Terms and Conditions",
         b"This content downloaded  on",
@@ -40,65 +37,54 @@ class JSTOR(Plugin):
         # jstor has certain watermarks only on the first page
         page_id = 0
 
-        # parse the pdf into a pdfminer document
-        pdf = parse_content(content)
-
-        # get a list of all object ids
-        xref = pdf.xrefs[0]
-        objids = xref.get_objids()
-
         # check each object in the pdf
-        for objid in objids:
-            # get an object by id
-            try:
-                obj: PDFStream = pdf.getobj(objid) # pyright: ignore[reportAssignmentType]
+        for objid, obj in iterate_objects(content):
+            if isinstance(obj, PDFStream):
+                if "FlateDecode" in str(obj.attrs.get("Filter", "")):
+                    data = obj.get_data()
 
-                if hasattr(obj, "attrs"):
-                    if "Filter" in obj.attrs and "FlateDecode" in str(obj.attrs["Filter"]):
-                        data = copy(obj.get_data())
+                    # make sure all of the requirements are in there
+                    if all(x in data for x in JSTOR.WATERMARKS):
+                        # remove the date
+                        startpos = data.find(b"This content downloaded ")
+                        endpos = data.find(b")", startpos)
+                        segment = data[startpos:endpos]
+                        if verbose and replacements:
+                            print(
+                                f"JSTOR: Found object {objid} with {JSTOR.WATERMARKS}: {segment}; omitting..."
+                            )
 
-                        # make sure all of the requirements are in there
-                        if all([requirement in data for requirement in JSTOR.requirements]):
-                            better_content = data
+                        data = data.replace(segment, b"")
 
-                            # remove the date
-                            startpos = better_content.find(b"This content downloaded ")
-                            endpos = better_content.find(b")", startpos)
-                            segment = better_content[startpos:endpos]
+                        # it looks like all of the watermarks are at the end?
+                        data = data[:-160]
+
+                        # "Accessed on dd/mm/yyy hh:mm"
+                        #
+                        # the "Accessed" line is only on the first page
+                        #
+                        # it's based on /F2
+                        #
+                        # This would be better if it could be decoded to
+                        # actually search for the "Accessed" text.
+                        if page_id == 0 and b"/F2 11 Tf\n" in data:
+                            startpos = data.rfind(b"/F2 11 Tf\n")
+                            endpos = data.find(b"Tf\n", startpos + 5)
+
                             if verbose and replacements:
-                                print(f"JSTOR: Found object {objid} with {JSTOR.requirements}: {segment}; omitting...")
+                                print(
+                                    f"JSTOR: Found object {objid} with {JSTOR.WATERMARKS}: {data[startpos:endpos]}; omitting..."
+                                )
 
-                            better_content = better_content.replace(segment, b"")
+                            data = data[0:startpos] + data[endpos:]
 
-                            # it looks like all of the watermarks are at the end?
-                            better_content = better_content[:-160]
+                        replacements.append([objid, data])
 
-                            # "Accessed on dd/mm/yyy hh:mm"
-                            #
-                            # the "Accessed" line is only on the first page
-                            #
-                            # it's based on /F2
-                            #
-                            # This would be better if it could be decoded to
-                            # actually search for the "Accessed" text.
-                            if page_id == 0 and b"/F2 11 Tf\n" in better_content:
-                                startpos = better_content.rfind(b"/F2 11 Tf\n")
-                                endpos = better_content.find(b"Tf\n", startpos+5)
-
-                                if verbose and replacements:
-                                    print(f"JSTOR: Found object {objid} with {JSTOR.requirements}: {better_content[startpos:endpos]}; omitting...")
-
-                                better_content = better_content[0:startpos] + better_content[endpos:]
-
-                            replacements.append([objid, better_content])
-
-                            page_id += 1
-            except PDFObjectNotFound as e:
-                print(f'Missing object: {e}')
+                        page_id += 1
 
         if verbose and replacements:
             print(
-                f'JSTOR: Found objects {[deets[0] for deets in replacements]} with "{JSTOR.requirements}"; omitting...'
+                f'JSTOR: Found objects {[deets[0] for deets in replacements]} with "{JSTOR.WATERMARKS}"; omitting...'
             )
 
         for deets in replacements:
@@ -107,4 +93,3 @@ class JSTOR(Plugin):
             content = replace_object_with(content, objid, replacement)
 
         return content
-
