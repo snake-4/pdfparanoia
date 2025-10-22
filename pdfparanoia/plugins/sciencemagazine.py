@@ -17,8 +17,8 @@ class ScienceMagazine(Plugin):
     # "oascentral" in one of the URIs, since the ads are all hyperlinked to
     # that server.
 
-    @classmethod
-    def scrub(cls, content, verbose=0):
+    @staticmethod
+    def scrub(content: bytes, verbose: bool = False) -> bytes:
         evil_ids = []
 
         # parse the pdf into a pdfminer document

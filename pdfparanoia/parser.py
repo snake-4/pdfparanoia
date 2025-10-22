@@ -11,19 +11,8 @@ from io import BytesIO
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
 
-def parse_pdf(handler):
-    """
-    Parses a PDF via pdfminer.
-    """
-    # reset to the beginning of the data
-    handler.seek(0)
 
-    parser = PDFParser(handler)
-    doc = PDFDocument(parser)
-
-    return doc
-
-def parse_content(content):
+def parse_content(content: bytes) -> PDFDocument:
     """
     Parses a PDF via pdfminer.
     """

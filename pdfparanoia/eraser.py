@@ -7,7 +7,7 @@ Tools to erase things from pdfs by direct manipulation of the pdf format.
 
 """
 
-def manipulate_pdf(content, objid, callback, *args):
+def manipulate_pdf(content: bytes, objid: int, callback, *args):
     """
     Iterates through a pdf looking for the object with the objid id. When the
     object is found, callback is called with a reference to the current list of
@@ -37,7 +37,7 @@ def manipulate_pdf(content, objid, callback, *args):
     output = b''.join(outlines)
     return output
 
-def remove_object_by_id(content, objid):
+def remove_object_by_id(content: bytes, objid: int) -> bytes:
     """
     Deletes an object from a pdf. Mostly streams and FlateDecode stuff.
     """
@@ -45,7 +45,7 @@ def remove_object_by_id(content, objid):
     output = manipulate_pdf(content, objid, _remove_object)
     return output
 
-def replace_object_with(content, objid, replacement):
+def replace_object_with(content: bytes, objid: int, replacement: bytes) -> bytes:
     """
     Replaces an object from a pdf. Mostly streams. This is useful for replacing
     an encoded object with a plaintext object.

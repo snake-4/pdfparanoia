@@ -15,8 +15,8 @@ class AmericanInstituteOfPhysics(Plugin):
     attached for whatever reason.
     """
 
-    @classmethod
-    def scrub(cls, content, verbose=0):
+    @staticmethod
+    def scrub(content: bytes, verbose: bool = False) -> bytes:
         evil_ids = []
 
         # parse the pdf into a pdfminer document
@@ -47,8 +47,8 @@ class AmericanInstituteOfPhysics(Plugin):
 
                         phrase="Redistribution subject to AIP license or copyright"
                         if phrase in data:
-                            if verbose >= 1:
-                                print(f"{cls.__name__}: Found object {objid} with \"{phrase}\"; omitting...")
+                            if verbose:
+                                print(f"AmericanInstituteOfPhysics: Found object {objid} with \"{phrase}\"; omitting...")
 
                             evil_ids.append(objid)
 

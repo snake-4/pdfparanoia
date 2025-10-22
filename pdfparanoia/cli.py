@@ -17,12 +17,11 @@ def main():
         help="Output more information, which may be sensitive or excessive.",
     )
     args = parser.parse_args()
-    verbose = 1 if args.verbose else 0
 
     inputContent = None
     with open(args.input[0], "rb") as input_file:
         inputContent = input_file.read()
 
-    outputContent = pdfparanoia.scrub(inputContent, verbose=verbose)
+    outputContent = pdfparanoia.scrub(inputContent, verbose=args.verbose)
     with open(args.output, "wb") as output_file:
         output_file.write(outputContent)

@@ -16,5 +16,5 @@ usage:
 :license: BSD.
 """
 
-import plugins
+from . import plugins
 from .core import scrub
