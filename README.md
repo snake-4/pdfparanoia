@@ -1,62 +1,38 @@
 # pdfparanoia
 
-pdfparanoia is a PDF watermark removal library for academic papers. Some
-publishers include private information like institution names, personal names,
-ip addresses, timestamps and other identifying information in watermarks on
-each page.
+This repository is a fork of [pdfparanoia](https://github.com/kanzure/pdfparanoia). The code was rewritten to use pdfminer.six, Python 3 and a modern build system.
 
-pdfparanoia это библиотека для удаления водяных знаков из PDF файлов научных
-статей. Некоторые издатели включают личную информацию, такую как названия
-институтов, имена, IP-адреса, время и дату и другую информацию в водяные знаки
-содержащиеся на каждой странице.
+pdfparanoia is a PDF watermark removal library for academic papers. Some publishers include private information, like institution names, personal names, IP addresses, timestamps, and other identifying information, in watermarks on each page.
 
-## Installing
+## Installation
 
-Simple.
-
-``` bash
-sudo pip install pdfparanoia
-```
-
-or,
-
-``` bash
-sudo python setup.py install
+```bash
+git clone https://github.com/snake-4/pdfparanoia.git
+cd pdfparanoia
+pip install .
 ```
 
 ## Usage
 
-``` python
+### As a library
+
+```python
 import pdfparanoia
 
-with open("nmat91417.pdf", "rb") as inputF:
-    with open("output.pdf", "wb") as outputF:
-        outputF.write(pdfparanoia.scrub(inputF.read()))
+with open("nmat91417.pdf", "rb") as fin:
+    with open("output.pdf", "wb") as fout:
+        fout.write(pdfparanoia.scrub(fin.read()))
 ```
 
-or from the shell,
+### From the command line
 
-``` bash
+```bash
 pdfparanoia --verbose input.pdf -o output.pdf
 ```
 
-## Supported
+## Supported Publishers
 
 * AIP
 * IEEE
 * JSTOR
 * RSC
-* SPIE (sort of)
-
-## Changelog
-
-* 0.0.13 - RSC
-* 0.0.12 - SPIE
-* 0.0.11 - pdfparanoia command-line interface. Use it by either piping in pdf data, or specifying a path to a pdf in the first argv slot.
-* 0.0.10 - JSTOR
-* 0.0.9 - AIP: better checks for false-positives; IEEE: remove stdout garbage.
-* 0.0.8 - IEEE
-
-## License
-
-BSD.

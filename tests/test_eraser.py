@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from pdfparanoia.eraser import remove_object_by_id
 
 def test_remove_object_by_id():
