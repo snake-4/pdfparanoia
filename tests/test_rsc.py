@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import unittest
 import pdfparanoia
 
-class RoyalSocietyOfChemistryTestCase(unittest.TestCase):
-    def test_rsc(self):
-        file_handler = open("tests/samples/rsc/3589bf649f8bb019bd97be9880627b7c.pdf", "rb")
-        content = file_handler.read()
-        file_handler.close()
+def test_rsc():
+    with open("tests/samples/rsc/3589bf649f8bb019bd97be9880627b7c.pdf", "rb") as fh:
+        content = fh.read()
 
-        # Check the PDF is from the RSC
-        self.assertIn(b"pubs.rsc.org", content)
+    # Check the PDF is from the RSC
+    assert b"pubs.rsc.org" in content
 
-        output = pdfparanoia.plugins.RoyalSocietyOfChemistry.scrub(content)
+    output = pdfparanoia.plugins.RoyalSocietyOfChemistry.scrub(content)
 
-        # Check the PDF was output correctly and still 
-        # contains the RSC url. 
-        self.assertIn(b"pubs.rsc.org", output)
+    # Check the PDF was output correctly and still contains the RSC url.
+    assert b"pubs.rsc.org" in output
 

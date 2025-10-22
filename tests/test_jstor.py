@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import unittest
 import pdfparanoia
 
-class JSTORTestCase(unittest.TestCase):
-    def test_jstor(self):
-        file_handler = open("tests/samples/jstor/231a515256115368c142f528cee7f727.pdf", "rb")
-        content = file_handler.read()
-        file_handler.close()
-        self.assertIn(b"\n18 0 obj \n", content)
+def test_jstor():
+    with open("tests/samples/jstor/231a515256115368c142f528cee7f727.pdf", "rb") as fh:
+        content = fh.read()
 
-        # this section will later be manipulated
-        self.assertIn(b"\n19 0 obj \n", content)
+    assert b"\n18 0 obj \n" in content
 
-        output = pdfparanoia.plugins.JSTOR.scrub(content)
+    # this section will later be manipulated
+    assert b"\n19 0 obj \n" in content
 
-        # FlateDecode should be replaced with a decompressed section
-        self.assertIn(b"\n19 0 obj\n<</Length 2862>>stream", output)
+    output = pdfparanoia.plugins.JSTOR.scrub(content)
+
+    # FlateDecode should be replaced with a decompressed section
+    assert b"\n19 0 obj\n<</Length 2862>>stream" in output
 
